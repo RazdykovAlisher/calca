@@ -1,134 +1,235 @@
 import 'package:flutter/material.dart';
-import 'package:math_expressions/math_expressions.dart';
+import 'package:flutter_application_2/button.dart';
 
-void main() {
-  runApp(CalculatorApp());
-}
+void main() => runApp(MyApp());
 
-class CalculatorApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: CalculatorScreen(),
+      debugShowCheckedModeBanner: false,
+      home: calca(),
     );
   }
 }
 
-class CalculatorScreen extends StatefulWidget {
+class calca extends StatefulWidget {
+  const calca({super.key});
+
   @override
-  _CalculatorScreenState createState() => _CalculatorScreenState();
+  State<calca> createState() => _calcaState();
 }
 
-class _CalculatorScreenState extends State<CalculatorScreen> {
-  String _input = '';
-
+class _calcaState extends State<calca> {
+  String number1 = '';
+  String operand = '';
+  String number2 = '';
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Калькулятор'),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Text(
-            _input,
-            style: TextStyle(fontSize: 24),
-          ),
-          SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              _buildButton('7'),
-              _buildButton('8'),
-              _buildButton('9'),
-              _buildButton('/'),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              _buildButton('4'),
-              _buildButton('5'),
-              _buildButton('6'),
-              _buildButton('*'),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              _buildButton('1'),
-              _buildButton('2'),
-              _buildButton('3'),
-              _buildButton('-'),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              _buildButton('0'),
-              _buildButton('.'),
-              _buildButton('C'), 
-              _buildButton('%'),
-              _buildButton('+'),
-            ],
-          ),
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _input = _evaluateExpression();
-              });
-            },
+        backgroundColor: Colors.black,
+        body: SafeArea(
+            bottom: false,
+            top: false,
+            child: Column(
+              children: [
+                Expanded(
+                    child: SingleChildScrollView(
+                  reverse: true,
+                  child: Container(
+                    alignment: Alignment.bottomRight,
+                    child: Text('$pastResolution',
+                        style: TextStyle(
+                            color: const Color.fromARGB(255, 185, 185, 185),
+                            fontSize: 30)),
+                  ),
+                )),
+                Expanded(
+                  child: SingleChildScrollView(
+                    reverse: true,
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Container(
+                        alignment: Alignment.bottomRight,
+                        child: Text(
+                          '$number1$operand$number2'.isEmpty
+                              ? '0'
+                              : '$number1$operand$number2',
+                          style: TextStyle(fontSize: 45, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                    flex: 4,
+                    child: Wrap(
+                      children: Btn.buttonValues
+                          .map((value) => SizedBox(
+                              width: value == Btn.n0
+                                  ? screenSize.width / 2
+                                  : screenSize.width / 4,
+                              height: screenSize.height / 7.6,
+                              child: buttonT(value)))
+                          .toList(),
+                    ))
+              ],
+            )));
+  }
+
+  String pastResolution = '';
+
+
+
+  Widget buttonT(value) {
+    return Padding(
+      padding: const EdgeInsets.all(5.0),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+            backgroundColor: [Btn.del, Btn.clr, Btn.per].contains(value)
+                ? Colors.grey
+                : [Btn.add, Btn.divide, Btn.minus, Btn.multiply].contains(value)
+                    ? Colors.orangeAccent
+                    : const Color.fromARGB(255, 69, 69, 69),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(100))),
+        child: Center(
             child: Text(
-              '=',
-              style: TextStyle(fontSize: 20),
-            ),
-          ),
-        ],
+          value,
+          style: TextStyle(color: Colors.white, fontSize: 30),
+        )),
+        onPressed: () => {onPressedButton(value)},
       ),
     );
   }
 
-  Widget _buildButton(String text) {
-    return ElevatedButton(
-      onPressed: () {
-        _onButtonPressed(text);
-      },
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 20),
-      ),
-    );
+  
+  void onPressedButton(String value) {
+    if (value == Btn.del) {
+      delete();
+      return;
+    }
+
+    if (value == Btn.clr) {
+      clear();
+      return;
+    }
+    if (value == Btn.per) {
+      percentage();
+      return;
+    }
+
+    if (value == Btn.calculate) {
+      equality();
+      return;
+    }
+    appending(value);
   }
 
-  void _onButtonPressed(String text) {
-    setState(() {
-      if (text == 'C') {
-        _input = '';
-      } else if (text == '=') {
-        _input = _evaluateExpression();
-      } else {
-        _input += text;
+//calculate
+
+  void equality() {
+    if (number1.isEmpty || number2.isEmpty || operand.isEmpty) {
+      return;
+    } else if (operand.isNotEmpty && number2.isNotEmpty) {
+      double num1 = double.parse(number1);
+      double num2 = double.parse(number2);
+      double result = 0.0;
+      switch (operand) {
+        case Btn.add:
+          result = num1 + num2;
+          break;
+        case Btn.minus:
+          result = num1 - num2;
+          break;
+        case Btn.multiply:
+          result = num1 * num2;
+          break;
+        case Btn.divide:
+          result = num1 / num2;
+          break;
+        default:
       }
+
+      pastResolution = '$num1 $operand $num2';
+      setState(() {
+        if (number1.endsWith('.0')) {
+          number1 = number1.substring(0, number1.length - 2);
+        }
+        number1 = '$result';
+        operand = '';
+        number2 = '';
+      });
+    }
+  }
+
+//percantage
+  void percentage() {
+    if (number1.isNotEmpty && operand.isNotEmpty && number2.isNotEmpty) {
+      equality();
+      return; //jwidwidiwd
+    }
+
+    if (operand.isNotEmpty) {
+      return;
+    }
+    final number = double.parse(number1);
+
+    setState(() {
+      number1 = '${(number / 100)}';
     });
   }
+//clear
 
-  String _evaluateExpression() {
-    try {
-      Parser p = Parser();
-      Expression exp = p.parse(_input);
-      ContextModel cm = ContextModel();
-      double result = exp.evaluate(EvaluationType.REAL, cm);
+  void clear() {
+    number1 = '';
+    operand = '';
+    number2 = '';
+    pastResolution = '';
+    setState(() {});
+  }
 
-      // Проверка на целое число без остатка
-      if (result % 1 == 0) {
-        return result.toInt().toString();
-      } else {
-        return result.toString();
-      }
-    } catch (e) {
-      return 'Error';
+  ///claclulation
+
+  ///delete
+  void delete() {
+    if (number1.isNotEmpty && operand.isEmpty) {
+      number1 = number1.substring(0, number1.length - 1);
+    } else if (number2.isNotEmpty && operand.isNotEmpty) {
+      number2 = number2.substring(0, number2.length - 1);
+    } else if (number1.isNotEmpty && operand.isNotEmpty && number2.isEmpty) {
+      operand = '';
     }
+    setState(() {});
+  }
+
+//appending
+  void appending(String value) {
+    if (value != Btn.dot && int.tryParse(value) == null) {
+      operand = value;
+      if (operand.isNotEmpty && number2.isNotEmpty) {
+        equality();
+      }
+    } else if (number1.isEmpty || operand.isEmpty) {
+      if (value == Btn.dot && number1.contains(Btn.dot)) {
+        return;
+      }
+      if (value == Btn.dot && number1.isEmpty || number1 == Btn.dot) {
+        value = '0.';
+      }
+      number1 += value;
+    } else if (number2.isEmpty || operand.isNotEmpty) {
+      if (value == Btn.dot && number2.contains(Btn.dot)) {
+        return;
+      }
+      if (value == Btn.dot && number2.isEmpty || number2 == Btn.dot) {
+        value = '0.';
+      }
+      number2 += value;
+    }
+    setState(() {});
   }
 }
